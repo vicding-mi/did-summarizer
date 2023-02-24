@@ -1,0 +1,139 @@
+version: '3.7'
+# Settings and configurations that are common for all containers
+
+services:
+    didapi:
+      networks:
+        - traefik-public
+      container_name: didapi
+      image: registry.diginfra.net/tsd/did-didapi:latest
+      environment:
+        - "DID_DB=external"
+        - "REDIS_HOST=redis"
+        - "REDIS_PORT=6379"
+        - "REDIS_DB=0"
+        - "REDIS_GENERIC=1"
+        - "REDIS_LOC=2"
+        - "REDIS_PER=3"
+        - "REDIS_ORG=4"
+        - "MONGO_HOST=mongostorage"
+        - "MONGO_PORT=27017"
+        - "MONGO_DB=did"
+        - "MONGO_COLLECTION=privatekeys"
+        - "MONGO_URI=reverseuri"
+        - "GENERICURI_DID=https://uri.did.${traefikhost}"
+        - "LOCATIONS_DID=https://loc.did.${traefikhost}"
+        - "PERSONS_DID=https://persons.did.${traefikhost}"
+        - "ORGANIZATIONS_DID=https://org.did.${traefikhost}"
+        - "DID_PWD=${did_pwd}"
+        - "DID_SECRET=${did_secret}"
+        - "DEBUG=False"
+        - "TIMEZONE=Europe/Amsterdam"
+        - "TEST=1"
+        - "S3_ACCESS_KEY"
+        - "S3_SECRET_KEY"
+        - "S3_API_HOST"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.didapi.rule=Host(`uri.did.${traefikhost}`)"
+        - "traefik.http.services.didapi.loadbalancer.server.port=80"
+        - "traefik.http.routers.didapi.entrypoints=http"
+
+    didbox:
+      networks:
+        - traefik-public
+      container_name: diduri
+      image: oydeu/oydid-base #:220829e
+      environment:
+        - "DID_DB=external"
+      ports:
+        - "3000:3000"
+
+    didboxloc:
+      networks:
+        - traefik-public
+      image: oydeu/oydid-base #:220829e
+      container_name: locations
+      environment:
+        - "DID_DB=external"
+      ports:
+        - "3001:3000"
+
+    didboxorg:
+      networks:
+        - traefik-public
+      container_name: organizations
+      image: oydeu/oydid-base #:220829e
+      environment:
+        - "DID_DB=external"
+      ports:
+        - "3002:3000"
+
+    didboxper:
+      networks:
+        - traefik-public
+      image: oydeu/oydid-base #:220829e
+      container_name: persons
+      environment:
+        - "DID_DB=external"
+      ports:
+        - "3003:3000"
+
+    dbbox:
+      networks:
+        - traefik-public
+      image: postgres:12.1
+      container_name: db
+      environment:
+        POSTGRES_HOST_AUTH_METHOD: "trust"
+      volumes:
+        - ./data/did_data:/var/lib/postgresql/data
+      ports:
+        - "5432:5432"
+
+    redis:
+      networks:
+        - traefik-public
+      image: "redis:alpine"
+      container_name: redis
+      ports:
+        - "6385:6379" 
+
+    mongo:
+      networks:
+        - traefik-public
+      command: mongod --setParameter failIndexKeyTooLong=false
+      container_name: mongostorage
+      image: mongo:4.0
+      ports:
+         - "27201:27017" # map port to none standard port, to avoid conflicts with locally installed mongo
+      volumes:
+        - ./data/mongo:/data/db
+
+    minio:
+      networks:
+        - traefik-public
+      image: minio/minio:RELEASE.2021-10-06T23-36-31Z
+      #image: minio/minio
+      container_name: minio
+      volumes:
+        - ${MINIO_DATA}:/data
+      ports:
+        - 9000:9000
+      command:
+        - server
+        - /data
+        - --console-address
+        - ":9001"
+      environment:
+        - "MINIO_ROOT_USER"
+        - "MINIO_ROOT_PASSWORD"
+        - "MINIO_BROWSER_REDIRECT_URL"
+        - "S3_ACCESS_KEY"
+        - "S3_SECRET_KEY"
+        - "S3_API_HOST"
+
+networks:
+  traefik-public:
+    external: true
+

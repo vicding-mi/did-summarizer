@@ -18,3 +18,5 @@ readabilipy
 doccano-client
 psycopg2
 redis
+nltk
+textacy
