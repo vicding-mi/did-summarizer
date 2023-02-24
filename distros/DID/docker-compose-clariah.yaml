@@ -21,7 +21,7 @@ services:
         - "MONGO_DB=did"
         - "MONGO_COLLECTION=privatekeys"
         - "MONGO_URI=reverseuri"
-        - "GENERICURI_DID=https://uri.did.${traefikhost}"
+        - "GENERICURI_DID=https://uridid.${traefikhost}"
         - "LOCATIONS_DID=https://loc.did.${traefikhost}"
         - "PERSONS_DID=https://persons.did.${traefikhost}"
         - "ORGANIZATIONS_DID=https://org.did.${traefikhost}"
@@ -35,7 +35,7 @@ services:
         - "S3_API_HOST"
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.didapi.rule=Host(`uri.did.${traefikhost}`)"
+        - "traefik.http.routers.didapi.rule=Host(`uridid.${traefikhost}`)"
         - "traefik.http.services.didapi.loadbalancer.server.port=80"
         - "traefik.http.routers.didapi.entrypoints=http"
 
